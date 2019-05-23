@@ -3,10 +3,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:Polygons"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
+        Title="Polygons" Height="420" Width="400" MinHeight="420" MinWidth="400">
+    <Grid Background="Wheat">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="4*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Label Content="Sides" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="0"></Label>
+        <xctk:IntegerUpDown Value="3" Minimum="3" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="0" />
+        <Label Content="Radius" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="1"></Label>
+        <xctk:IntegerUpDown Value="100" Minimum="10" Maximum="200" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="1" />
+        <Label Content="Angle" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="2"></Label>
+        <xctk:IntegerUpDown Value="0" Minimum="0" Maximum="360" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="2" />
+        <Button x:Name="button"  HorizontalAlignment="Center"  Content="Draw" Width="70" Height="30"  Grid.Row="0" Grid.Column="3" />
+        <Canvas Background="White" Width="auto" Height="auto" Margin="30 20" Grid.Row="1" Grid.ColumnSpan="4"/>
     </Grid>
 </Window>
