@@ -19,12 +19,12 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Content="Sides" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="0"></Label>
-        <xctk:IntegerUpDown Value="3" Minimum="3" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="0" />
+        <xctk:IntegerUpDown Name="nSides" Value="3" Minimum="2" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="0" />
         <Label Content="Radius" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="1"></Label>
-        <xctk:IntegerUpDown Value="100" Minimum="10" Maximum="200" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="1" />
+        <xctk:IntegerUpDown Name="nRadius" Value="100" Minimum="10" Maximum="300" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="1" />
         <Label Content="Angle" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="2"></Label>
-        <xctk:IntegerUpDown Value="0" Minimum="0" Maximum="360" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="2" />
-        <Button x:Name="button"  HorizontalAlignment="Center"  Content="Draw" Width="70" Height="30"  Grid.Row="0" Grid.Column="3" />
-        <Canvas Background="White" Width="auto" Height="auto" Margin="30 20" Grid.Row="1" Grid.ColumnSpan="4"/>
+        <xctk:IntegerUpDown Name="nAngle" Value="0" Minimum="0" Maximum="360" TextAlignment="Center" Height="30" Width="auto" Margin="10" Grid.Row="0" Grid.Column="2" />
+        <Button x:Name="button"  HorizontalAlignment="Center"  Content="Draw" Width="70" Height="30"  Grid.Row="0" Grid.Column="3" Click="Button_Click" />
+        <Canvas Name="polygonCanvas" Background="White" Width="auto" Height="auto" Margin="30 20" Grid.Row="1" Grid.ColumnSpan="4"/>
     </Grid>
 </Window>
