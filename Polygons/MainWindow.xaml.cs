@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,10 +21,39 @@ namespace Polygons
     /// </summary>
     public partial class MainWindow : Window
     {
+        Polygon polygon;
+        CustomPolygon customPolygon;
 
         public MainWindow()
         {
+            //default initialization in case of null exeption
+            this.polygon = new Polygon();
+            this.customPolygon = new CustomPolygon(polygon, new Point(1,1));
+            this.customPolygon.polygon.Points = new PointCollection();
+            this.customPolygon.polygon.Points.Add(new Point(1, 1));
+
             InitializeComponent();
+            this.MouseMove += this.onMouseMove;
+        }
+
+        private void onMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point clickPoint = e.GetPosition(this);  
+                //Map point positon inside canvas
+                clickPoint = mainWindow.TranslatePoint(clickPoint, polygonCanvas);
+
+                if (!this.customPolygon.IsPointInPolygon(this.customPolygon.GetPolygonVertices(), clickPoint))
+                {
+                    Debug.WriteLine("out");
+                    clickPoint = customPolygon.ClosestPointFromPointToPolygon(this.customPolygon, clickPoint);
+                }
+                this.customPolygon.MovePointer(clickPoint);
+
+                //calculate weights
+            }
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -37,58 +67,11 @@ namespace Polygons
 
             //Drawing center point
             Point center = new Point(polygonCanvas.ActualWidth / 2, polygonCanvas.ActualHeight / 2);
-            Ellipse myEllipse = new Ellipse();
-            myEllipse.Fill = Brushes.Black;
-            myEllipse.StrokeThickness = 2;
-            myEllipse.Stroke = Brushes.Black;
-            myEllipse.Width = 10;
-            myEllipse.Height = 10;
-            Canvas.SetTop(myEllipse, center.Y - myEllipse.Height / 2);
-            Canvas.SetLeft(myEllipse, center.X - myEllipse.Width / 2);
-            polygonCanvas.Children.Add(myEllipse);
-
+            this.customPolygon = new CustomPolygon(this.polygon, center);
+            polygonCanvas.Children.Add(customPolygon.pointer);
+            
             //Drawing the polygon
-            polygonCanvas.Children.Add(DrawRegularPolygon(sides, radius, angle, center));
-        }
-
-
-        private Polygon DrawRegularPolygon(int sides, int radius, int startingAngle, Point center)
-        {
-            Polygon  polygon = new Polygon();
-            polygon.Stroke = Brushes.Black;
-            polygon.Fill = Brushes.Transparent;
-
-            //Get the location for each vertex of the polygon
-            PointCollection polygonPoints = CalculateVertices(sides, radius, startingAngle, center);
-            polygon.Points = polygonPoints;
-
-            return polygon;
-        }
-
-        private PointCollection CalculateVertices(int sides, int radius, int startingAngle, Point center)
-        {
-            PointCollection points = new PointCollection();
-            float step = 360.0f / sides;
-
-            float angle = startingAngle; //starting angle
-            for (double i = startingAngle; i < startingAngle + 360.0; i += step) //go in a circle
-            {
-                points.Add(DegreesToXY(angle, radius, center));
-                angle += step;
-            }
-
-            return points;
-        }
-
-        private Point DegreesToXY(float degrees, float radius, Point origin)
-        {
-            Point xy = new Point();
-            double radians = degrees * Math.PI / 180.0;
-
-            xy.X = (int)(Math.Cos(radians) * radius + origin.X);
-            xy.Y = (int)(Math.Sin(-radians) * radius + origin.Y);
-
-            return xy;
+            polygonCanvas.Children.Add(customPolygon.DrawRegularPolygon(sides, radius, angle, center));
         }
     }
 }
