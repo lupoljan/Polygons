@@ -21,13 +21,15 @@ namespace Polygons
         public Polygon polygon;
         public Point center;
         public Ellipse pointer;
+        public List<string> objectiveNames = new List<string>();
+        public List<TextBlock> textBlocks = new List<TextBlock>();
+        public List<Double> Weights;
 
         public CustomPolygon(Polygon polygon, Point center)
         {
             this.polygon = polygon;
             this.center = center;
             this.pointer = SetPointer(center);
-
         }
 
         private Ellipse SetPointer(Point center)
@@ -72,7 +74,7 @@ namespace Polygons
             if (points.Count == 2)  // line
             {
 
-                inside = (minX <= p.X && p.X <= maxX) && (minY-2 <= p.Y && p.Y <= maxY+2);
+                inside = (minX <= p.X && p.X <= maxX) && (minY - 2 <= p.Y && p.Y <= maxY + 2);
                 return inside;
             }
 
@@ -82,7 +84,7 @@ namespace Polygons
                 return false;
             }
 
-  
+
             for (int i = 0, j = points.Count - 1; i < points.Count; j = i++)
             {
                 if ((points[i].Y > p.Y) != (points[j].Y > p.Y) &&
@@ -130,9 +132,9 @@ namespace Polygons
                     Point p1 = new Point(line.X1, line.Y1);
                     Point p2 = new Point(line.X2, line.Y2);
                     // calculate slopes
-                    double slope = CustomPolygon.GetSlope(p1,p2);
+                    double slope = CustomPolygon.GetSlope(p1, p2);
                     double perpSlope = CustomPolygon.GetPerpendicularSlope(slope);
-                    Debug.WriteLine("slope:{0}  perp:{1}",slope, perpSlope);
+                    Debug.WriteLine("slope:{0}  perp:{1}", slope, perpSlope);
 
                     // perpendicular line from point 
                     Line perpLine = CustomPolygon.GetPerpLine(point, perpSlope);
@@ -221,38 +223,9 @@ namespace Polygons
             return xy;
         }
 
-        private List<Line> PopulatePolygonLines()
-        {
-            List<Line> polygonLines = new List<Line>();
-            for (int i = 0; i < this.polygon.Points.Count; i++)
-            {
-                Debug.WriteLine(i);
-                Point firstPoint = this.polygon.Points[i];
-                Point secondPoint;
-                // if this is the last point
-                if (i == this.polygon.Points.Count - 1)
-                {
-                    secondPoint = this.polygon.Points[0];
-                }
-                else
-                {
-                    secondPoint = this.polygon.Points[i + 1];
-                }
-
-                Line line = new Line();
-                line.X1 = firstPoint.X;
-                line.X2 = secondPoint.X;
-                line.Y1 = firstPoint.Y;
-                line.Y2 = secondPoint.Y;
-                polygonLines.Add(line);
-                Debug.WriteLine("P1:{0},{1}  P2:{2},{3} ",line.X1, line.Y1, line.X2, line.Y2);
-            }
-            return polygonLines;
-        }
-
         public PointCollection GetPolygonVertices()
         {
-           return this.polygon.Points;
+            return this.polygon.Points;
         }
 
         public List<Line> GetPolygonLines()
@@ -295,11 +268,13 @@ namespace Polygons
             double l2Slope = CustomPolygon.GetSlope(l2p1, l2p2);
 
             // if parallel
-            if (l1Slope == l2Slope) {
-                return null; }
+            if (l1Slope == l2Slope)
+            {
+                return null;
+            }
 
             // if either one is vertical (but not both because we would have returned null already)
-            else if (CustomPolygon.IsVertical(new Point(l1.X1,l1.Y1), new Point(l1.X2, l1.Y2) ))
+            else if (CustomPolygon.IsVertical(new Point(l1.X1, l1.Y1), new Point(l1.X2, l1.Y2)))
             {
                 Debug.WriteLine("L1 vertical");
                 intersectionPoint.X = l1p1.X;
@@ -376,6 +351,19 @@ namespace Polygons
         {
             return Math.Sqrt(Math.Pow(point1.X - point2.X, 2) + Math.Pow(point1.Y - point2.Y, 2));
         }
+
+        public static bool ContainsNegative(List<Double> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i] < 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static bool IsPointInLine(Point point3, Line line)
         {
             Point point1 = new Point(line.X1, line.Y1);
@@ -388,8 +376,137 @@ namespace Polygons
             else { return false; }
         }
 
-        //displayWeightsFromClick
-        //calculate distance
-        //normalize weight
+        public static bool FloatsAreEqual(double n1, double n2, double offset)
+        {
+            if ((n2 <= n1 + offset) && (n2 >= n1 - offset))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private List<Double> NormalizeWeights(List<Double> weights)
+        {
+            List<Double> normalizedWeights = new List<Double>();
+            double sum = weights.Sum();
+            for (int i = 0; i < weights.Count; i++)
+            {
+                normalizedWeights.Add((weights[i] / sum) * 100);
+            }
+            return normalizedWeights;
+        }
+
+        private List<Double> GetClickDistanceList(PointCollection points, Point clickPoint)
+        {
+            List<Double> distances = points.Aggregate(
+                new List<Double>(),
+                (acc, p) =>
+                {
+                    acc.Add(CustomPolygon.GetDistance(p, clickPoint));
+                    return acc;
+                });
+            return distances;
+        }
+
+        private List<Double> GetExtendedDistanceList(PointCollection points, Point clickPoint)
+        {
+            List<Double> extendedDistances = new List<Double>();
+            const double offset = 0.01;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                Point objectivePoint = points[i];
+
+                // get the line from objective point to the clickpoint
+                Line clickLine = new Line();
+                clickLine.X1 = objectivePoint.X;
+                clickLine.X2 = clickPoint.X;
+                clickLine.Y1 = objectivePoint.Y;
+                clickLine.Y2 = clickPoint.Y;
+
+                Point? intersectionPoint = null;
+
+                // we cycle through the polygon points 2 at a time, finding the polygon line
+                // that intersects with the extended clickLine
+                for (int j = 0; j < points.Count; j++)
+                {
+                    Point currentPoint = points[j];
+                    Point nextPoint;
+
+                    if ((j + 1) < points.Count)
+                    {
+                        nextPoint = points[j + 1];
+                    }
+                    else
+                    {
+                        // if the point is the last point, we cycle back to get the point in the 0th index
+                        nextPoint = points[0];
+                    }
+
+                    Line polygonLine = new Line();
+                    polygonLine.X1 = currentPoint.X;
+                    polygonLine.X2 = nextPoint.X;
+                    polygonLine.Y1 = currentPoint.Y;
+                    polygonLine.Y2 = nextPoint.Y;
+
+                    intersectionPoint = CustomPolygon.GetIntersectionPoint(clickLine, polygonLine);
+
+                    // Make sure the intersection point calculated is not the objectivePoint
+                    if (intersectionPoint.HasValue &&
+                        // this part is trick af because it is floating point calculation. Need some offset
+                        (!CustomPolygon.FloatsAreEqual(objectivePoint.X, intersectionPoint.Value.X, offset) ||
+                        !CustomPolygon.FloatsAreEqual(objectivePoint.Y, intersectionPoint.Value.Y, offset))
+                        &&
+                        CustomPolygon.IsPointInLine(intersectionPoint.Value, polygonLine))
+                    {
+                        // if we have discovered the point we break out of the for loop
+                        Console.WriteLine("the valid intersection point is ({0}, {1})", intersectionPoint.Value.X, intersectionPoint.Value.Y);
+                        break;
+                    }
+                }
+
+                // Get distance between the polygon corner and the intersecting coordinate
+                if (intersectionPoint.HasValue)
+                {
+                    double extendedDistance = CustomPolygon.GetDistance(intersectionPoint.Value, objectivePoint);
+                    extendedDistances.Add(extendedDistance);
+                }
+                //else
+                //{
+                //    // I should be getting some kind of intersection here if not 
+                //    throw new Exception("Intersection Point is null even though it should have a coordinate");
+                //}
+            }
+
+            return extendedDistances;
+        }
+
+        private List<Double> GetUnnormalizedWeights(List<Double> longDist, List<Double> clickDist)
+        {
+            List<Double> unnormWeights = new List<Double>();
+            for (int i = 0; i < longDist.Count; i++)
+            {
+                unnormWeights.Add(1 - (clickDist[i] / longDist[i]));
+            }
+            return unnormWeights;
+        }
+
+        public void CalculateWeights(Point clickPoint)
+        {
+            List<Double> clickDistances = this.GetClickDistanceList(this.polygon.Points, clickPoint);  
+            List<Double> extendedDistances = this.GetExtendedDistanceList(this.polygon.Points, clickPoint);
+            List<Double> unnormalizedWeights = this.GetUnnormalizedWeights(extendedDistances, clickDistances);
+
+            // Need to include this because line thickness of the polygon causes it to "bleed outwards" from the polygon's points
+            if (CustomPolygon.ContainsNegative(unnormalizedWeights))
+            {
+                Console.WriteLine("Out of bounds of the polygon");
+                Weights = this.NormalizeWeights(unnormalizedWeights);
+            }
+            else
+            {
+                Weights = this.NormalizeWeights(unnormalizedWeights);
+            }
+        }
     }
 }

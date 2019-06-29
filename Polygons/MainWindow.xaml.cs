@@ -50,8 +50,9 @@ namespace Polygons
                     clickPoint = customPolygon.ClosestPointFromPointToPolygon(this.customPolygon, clickPoint);
                 }
                 this.customPolygon.MovePointer(clickPoint);
-
-                //calculate weights
+                //calculate weights and update labels
+                this.customPolygon.CalculateWeights(clickPoint);
+                this.RefreshObjectiveText();
             }
 
         }
@@ -72,6 +73,56 @@ namespace Polygons
             
             //Drawing the polygon
             polygonCanvas.Children.Add(customPolygon.DrawRegularPolygon(sides, radius, angle, center));
+
+            //Draw labels near polygon points
+            this.PopulateObjectiveNames();
+            this.LabelPolygonPoints();
+            this.customPolygon.CalculateWeights(center);
+            this.AddObjectiveText();
+        }
+
+        private TextBlock addTextBlockToCanvas(string text, double x, double y)
+        {
+            TextBlock textBlock = new TextBlock();
+            textBlock.Text = text;
+            Canvas.SetTop(textBlock, y);
+            Canvas.SetLeft(textBlock, x);
+            polygonCanvas.Children.Add(textBlock);
+            return textBlock;
+        }
+        private void PopulateObjectiveNames()
+        {
+            customPolygon.objectiveNames.Clear();
+            for (int i = 0; i < this.polygon.Points.Count; i++)
+            {
+                string objectiveName = "O" + i.ToString();
+                customPolygon.objectiveNames.Add(objectiveName);
+            }
+        }
+        private void AddObjectiveText()
+        {
+            customPolygon.textBlocks.Clear();
+            for (int i = 0; i < customPolygon.objectiveNames.Count; i++)
+            {
+                customPolygon.textBlocks.Add(this.addTextBlockToCanvas(customPolygon.objectiveNames[i], 10, (i + 1) * 20));
+                customPolygon.textBlocks[i].Text = customPolygon.objectiveNames[i] + ": " + customPolygon.Weights[i].ToString("0.00");
+            }
+        }
+
+        private void RefreshObjectiveText()
+        {
+            for (int i = 0; i < customPolygon.objectiveNames.Count; i++)
+            {
+                customPolygon.textBlocks[i].Text = customPolygon.objectiveNames[i] + ": " + customPolygon.Weights[i].ToString("0.00");
+            }
+        }
+
+        private void LabelPolygonPoints()
+        {
+            for (int i = 0; i < customPolygon.objectiveNames.Count; i++)
+            {
+                this.addTextBlockToCanvas(customPolygon.objectiveNames[i], customPolygon.polygon.Points[i].X, customPolygon.polygon.Points[i].Y);
+            }
         }
     }
 }
