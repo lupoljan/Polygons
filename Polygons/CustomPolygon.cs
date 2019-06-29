@@ -2,16 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace Polygons
@@ -23,7 +16,7 @@ namespace Polygons
         public Ellipse pointer;
         public List<string> objectiveNames = new List<string>();
         public List<TextBlock> textBlocks = new List<TextBlock>();
-        public List<Double> Weights;
+        public List<Double> weights;
 
         public CustomPolygon(Polygon polygon, Point center)
         {
@@ -395,6 +388,17 @@ namespace Polygons
             }
             return normalizedWeights;
         }
+        private List<Double> NormalizeWeightsTwoSide(List<Double> weights, double max)
+        {
+            List<Double> normalizedWeights = new List<Double>();
+  
+            for (int i = 0; i < weights.Count; i++)
+            {
+                normalizedWeights.Add( (1- weights[i] / max) * 100);
+                    Debug.WriteLine("weight {1}:{0}", normalizedWeights[i], i);
+            }
+            return normalizedWeights;
+        }
 
         private List<Double> GetClickDistanceList(PointCollection points, Point clickPoint)
         {
@@ -493,20 +497,31 @@ namespace Polygons
 
         public void CalculateWeights(Point clickPoint)
         {
-            List<Double> clickDistances = this.GetClickDistanceList(this.polygon.Points, clickPoint);  
-            List<Double> extendedDistances = this.GetExtendedDistanceList(this.polygon.Points, clickPoint);
-            List<Double> unnormalizedWeights = this.GetUnnormalizedWeights(extendedDistances, clickDistances);
+            List<Double> clickDistances = this.GetClickDistanceList(this.polygon.Points, clickPoint);
 
-            // Need to include this because line thickness of the polygon causes it to "bleed outwards" from the polygon's points
-            if (CustomPolygon.ContainsNegative(unnormalizedWeights))
+            if (this.polygon.Points.Count == 2) //line
             {
-                Console.WriteLine("Out of bounds of the polygon");
-                Weights = this.NormalizeWeights(unnormalizedWeights);
+                double max = CustomPolygon.GetDistance(this.polygon.Points[0], this.polygon.Points[1]);
+                Debug.WriteLine("max distance:{0}", max);
+                weights = this.NormalizeWeightsTwoSide(clickDistances, max);
             }
             else
             {
-                Weights = this.NormalizeWeights(unnormalizedWeights);
+                List<Double> extendedDistances = this.GetExtendedDistanceList(this.polygon.Points, clickPoint);
+                List<Double> unnormalizedWeights = this.GetUnnormalizedWeights(extendedDistances, clickDistances);
+
+                // Need to include this because line thickness of the polygon causes it to "bleed outwards" from the polygon's points
+                if (CustomPolygon.ContainsNegative(unnormalizedWeights))
+                {
+                    Console.WriteLine("Out of bounds of the polygon");
+                    weights = this.NormalizeWeights(unnormalizedWeights);
+                }
+                else
+                {
+                    weights = this.NormalizeWeights(unnormalizedWeights);
+                }
             }
+  
         }
     }
 }

@@ -105,7 +105,7 @@ namespace Polygons
             for (int i = 0; i < customPolygon.objectiveNames.Count; i++)
             {
                 customPolygon.textBlocks.Add(this.addTextBlockToCanvas(customPolygon.objectiveNames[i], 10, (i + 1) * 20));
-                customPolygon.textBlocks[i].Text = customPolygon.objectiveNames[i] + ": " + customPolygon.Weights[i].ToString("0.00");
+                customPolygon.textBlocks[i].Text = customPolygon.objectiveNames[i] + ": " + customPolygon.weights[i].ToString("0");
             }
         }
 
@@ -113,7 +113,7 @@ namespace Polygons
         {
             for (int i = 0; i < customPolygon.objectiveNames.Count; i++)
             {
-                customPolygon.textBlocks[i].Text = customPolygon.objectiveNames[i] + ": " + customPolygon.Weights[i].ToString("0.00");
+                customPolygon.textBlocks[i].Text = customPolygon.objectiveNames[i] + ": " + customPolygon.weights[i].ToString("0");
             }
         }
 
